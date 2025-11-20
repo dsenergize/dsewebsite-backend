@@ -1,0 +1,72 @@
+# ----------------------------
+# Node.js / Express Backend
+# ----------------------------
+
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# dotenv environment variables
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE / Editors
+.vscode/
+.idea/
+
+# ----------------------------
+# Multer Uploads
+# ----------------------------
+uploads/
+uploads/*
+
+# If you store images in public/uploads
+public/uploads/
+
+# ----------------------------
+# Build Output (if any)
+# ----------------------------
+dist/
+build/
+
+# ----------------------------
+# Docker
+# ----------------------------
+# Docker files you WANT to track should NOT be ignored:
+# Dockerfile
+# docker-compose.yml
+# Ignore Docker internal artifacts:
+docker-data/
+docker-volume/
+*.tmp
+*.temp
+
+# ----------------------------
+# PM2 Logs
+# ----------------------------
+.pids/
+.pmx/
+
+# ----------------------------
+# Misc
+# ----------------------------
+coverage/

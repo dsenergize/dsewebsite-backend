@@ -7,6 +7,9 @@ import connectDB from "./Configs/db.js";
 import blogRoutes from "./Routes/blogRoutes.js";
 import authRoutes from "./Routes/authRoutes.js";
 
+// Import Clerk middleware
+import { authenticateToken } from "./Middlewares/authMiddlewares.js";
+
 dotenv.config();
 
 // Get __dirname in ES modules
@@ -29,8 +32,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use("/api/blogs", blogRoutes);
+// Public auth routes (register/login can still exist if needed)
+app.use("/api/auth", authRoutes);
+
+// Protected routes (example: blogs can require auth)
+app.use("/api/blogs", authenticateToken, blogRoutes);
 
 // Serve static files from dist folder (frontend build)
 const distPath = path.join(__dirname, "../Frontend/dist");

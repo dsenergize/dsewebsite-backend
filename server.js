@@ -41,27 +41,9 @@ app.use("/api/auth", authRoutes);
 // Protected routes (example: blogs can require auth)
 app.use("/api/blogs", authenticateToken, blogRoutes);
 
-// === FIX IS HERE ===
-// Serve static files from dist folder.
-// In the Docker container, 'dist' is directly inside the working directory (/app).
-// === Serve Frontend Correctly ===
-
-const distPath = path.join(__dirname, "../Frontend/dist");
-
-if (fs.existsSync(distPath)) {
-  console.log("Serving frontend from:", distPath);
-
-  app.use(express.static(distPath));
-
-  app.get("*", (req, res) => {
-    if (req.path.startsWith("/api/")) {
-      return res.status(404).json({ message: "API route not found" });
-    }
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-} else {
-  console.error("❌ Frontend dist folder NOT FOUND:", distPath);
-}
+app.use((req, res) => {
+  return res.status(404).json({ message: "Route not found" });
+});
 
 // ===================
 

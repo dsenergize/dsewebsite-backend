@@ -21,6 +21,8 @@ const PORT = process.env.PORT || 5000;
 console.log("Loaded PORT =", PORT);
 
 // Connect to MongoDB
+// NOTE: Make sure connectDB is correctly configured to use environment variables
+// that are available when the Docker container runs.
 connectDB();
 
 // Create the Express app
@@ -38,8 +40,12 @@ app.use("/api/auth", authRoutes);
 // Protected routes (example: blogs can require auth)
 app.use("/api/blogs", authenticateToken, blogRoutes);
 
-// Serve static files from dist folder (frontend build)
-const distPath = path.join(__dirname, "../Frontend/dist");
+// === FIX IS HERE ===
+// Serve static files from dist folder.
+// In the Docker container, 'dist' is directly inside the working directory (/app).
+const distPath = path.join(__dirname, "dist"); 
+// If __dirname is /app, distPath is now correctly set to /app/dist
+
 app.use(express.static(distPath));
 
 // Fallback route for React Router - serves index.html for all non-API routes
@@ -48,8 +54,10 @@ app.get("*", (req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ message: "API route not found" });
   }
+  // Ensure the correct distPath is used here too
   res.sendFile(path.join(distPath, "index.html"));
 });
+// ===================
 
 // Error handling middleware
 app.use((err, req, res, next) => {

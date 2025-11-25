@@ -44,10 +44,13 @@ app.use("/api/blogs", authenticateToken, blogRoutes);
 // === FIX IS HERE ===
 // Serve static files from dist folder.
 // In the Docker container, 'dist' is directly inside the working directory (/app).
-const distPath = path.join(__dirname, "dist"); 
-// If __dirname is /app, distPath is now correctly set to /app/dist
+// === Serve Frontend Correctly ===
+
+const distPath = path.join(__dirname, "../Frontend/dist");
 
 if (fs.existsSync(distPath)) {
+  console.log("Serving frontend from:", distPath);
+
   app.use(express.static(distPath));
 
   app.get("*", (req, res) => {
@@ -56,7 +59,10 @@ if (fs.existsSync(distPath)) {
     }
     res.sendFile(path.join(distPath, "index.html"));
   });
+} else {
+  console.error("❌ Frontend dist folder NOT FOUND:", distPath);
 }
+
 // ===================
 
 // Error handling middleware

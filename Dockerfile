@@ -23,7 +23,7 @@ COPY . .
 # Run the frontend build process (if applicable)
 # The output (e.g., index.html, JS/CSS bundles) will be in the 'dist' folder, which server.js expects.
 # If your project doesn't have a separate build step (e.g., if it's purely a backend API), you can comment this line out.
-RUN npm run build
+RUN npm run build:frontend
 
 # ------------------------------------
 # STAGE 2: Production Runtime

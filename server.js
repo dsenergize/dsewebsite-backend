@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import connectDB from "./Configs/db.js";
 import blogRoutes from "./Routes/blogRoutes.js";
 import authRoutes from "./Routes/authRoutes.js";
+import fs from "fs";
 
 // Import Clerk middleware
 import { authenticateToken } from "./Middlewares/authMiddlewares.js";
@@ -46,17 +47,16 @@ app.use("/api/blogs", authenticateToken, blogRoutes);
 const distPath = path.join(__dirname, "dist"); 
 // If __dirname is /app, distPath is now correctly set to /app/dist
 
-app.use(express.static(distPath));
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
 
-// Fallback route for React Router - serves index.html for all non-API routes
-app.get("*", (req, res) => {
-  // Don't serve index.html for API routes
-  if (req.path.startsWith("/api/")) {
-    return res.status(404).json({ message: "API route not found" });
-  }
-  // Ensure the correct distPath is used here too
-  res.sendFile(path.join(distPath, "index.html"));
-});
+  app.get("*", (req, res) => {
+    if (req.path.startsWith("/api/")) {
+      return res.status(404).json({ message: "API route not found" });
+    }
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
 // ===================
 
 // Error handling middleware

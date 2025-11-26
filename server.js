@@ -32,8 +32,8 @@ const app = express();
 
 // --- DYNAMIC CORS CONFIGURATION FOR PRODUCTION ---
 const allowedOrigins = [
-  "http://localhost:5173", // Local dev
-  "http://localhost:4173", // Local preview
+  "http://localhost:5173",
+"https://dsenergize.com",
 ];
 
 // Add the production URL(s) from an environment variable (set during gcloud deploy)

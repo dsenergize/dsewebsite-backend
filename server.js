@@ -30,7 +30,10 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:4173"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -38,8 +41,7 @@ app.use(express.urlencoded({ extended: true }));
 // Public auth routes (register/login can still exist if needed)
 app.use("/api/auth", authRoutes);
 
-// Protected routes (example: blogs can require auth)
-app.use("/api/blogs", authenticateToken, blogRoutes);
+app.use("/api/blogs", blogRoutes);
 
 app.use((req, res) => {
   return res.status(404).json({ message: "Route not found" });

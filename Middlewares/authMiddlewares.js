@@ -1,9 +1,26 @@
-// Middlewares/authMiddleware.js (Clerk Version)
-// Make sure CLERK_SECRET_KEY is available in your backend environment variables!
-import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+import { clerkClient } from "@clerk/clerk-sdk-node";
 
-export const authenticateToken = (req, res, next) => {
-  // ClerkExpressRequireAuth verifies the token against Clerk's public key
-  // and adds authentication information to req.auth (if successful).
-  ClerkExpressRequireAuth()(req, res, next);
+export const authenticateToken = async (req, res, next) => {
+  try {
+    const header = req.headers.authorization;
+
+    if (!header || !header.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    const token = header.split(" ")[1];
+
+    // Verify Clerk session
+    const session = await clerkClient.sessions.verifySession(token);
+
+    if (!session || !session.userId) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    req.auth = { userId: session.userId };
+    next();
+  } catch (err) {
+    console.error("Clerk Auth Error:", err);
+    return res.status(401).json({ message: "Unauthenticated" });
+  }
 };

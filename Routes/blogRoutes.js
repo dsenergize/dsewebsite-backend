@@ -13,20 +13,16 @@ import uploadMiddleware from "../Middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
-// DELETE & UPDATE must come BEFORE slug route
-router.delete("/:id", authenticateToken, deleteBlog);
-router.put("/:id", authenticateToken, uploadMiddleware.single("image"), updateBlog);
-
-// GET all
+// PUBLIC ROUTES
 router.get("/", getAllBlogs);
 
-// upload
-router.post("/upload", authenticateToken, uploadMiddleware.single("image"), uploadImage);
-
-// create
+// PROTECTED ROUTES
 router.post("/", authenticateToken, uploadMiddleware.single("image"), createBlog);
+router.post("/upload", authenticateToken, uploadMiddleware.single("image"), uploadImage);
+router.put("/:id", authenticateToken, uploadMiddleware.single("image"), updateBlog);
+router.delete("/:id", authenticateToken, deleteBlog);
 
-// GET by slug (this must remain last)
+// MUST BE LAST
 router.get("/:slug", getBlogBySlug);
 
 export default router;

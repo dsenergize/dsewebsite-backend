@@ -41,18 +41,43 @@ app.use(express.urlencoded({ extended: true }));
 // Public auth routes (register/login can still exist if needed)
 app.use("/api/auth", authRoutes);
 
+// Protected image upload route (for rich text editor image uploads)
+// Note: The /api/images route handles image uploads before being authenticated
+// in the blogRoutes. This is an intentional design pattern for public image uploads
+// that might be embedded in user content before final submission.
+
+// Use the authenticateToken middleware on the blog routes
+// to protect create/update/delete operations.
 app.use("/api/blogs", blogRoutes);
 
+// 404 Not Found Handler
 app.use((req, res) => {
   return res.status(404).json({ message: "Route not found" });
 });
 
-// ===================
-
-// Error handling middleware
+// NEW: Global Error Handler - MUST be the last middleware added
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: err.message });
+  console.error("Global Error Handler:", err.stack);
+  
+  // Handle Multer errors specifically (e.g., file size exceeded or file type not allowed)
+  if (err.name === 'MulterError') {
+    let errorMessage = `File upload failed: ${err.message}`;
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      errorMessage = 'File size limit exceeded. Max size is 5MB.';
+    } else if (err.message.includes('image files')) {
+      errorMessage = 'Only JPEG, JPG, PNG, and WebP image files are allowed.';
+    }
+    return res.status(400).json({ message: errorMessage });
+  }
+  
+  // Handle general errors
+  // If a status code was already set by a previous middleware (like in a controller), use it. 
+  // Otherwise, default to 500 Internal Server Error.
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode; 
+  res.status(statusCode).json({
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? 'Production Stack Trace Hidden' : err.stack, // Hide stack in production
+  });
 });
 
 // Start server

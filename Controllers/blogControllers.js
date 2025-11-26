@@ -1,6 +1,13 @@
 import Blog from "../Models/blogModels.js";
 import generateSlug from "../Utils/generateSlug.js";
 import imagekit from "../Configs/imagekitConfigs.js";
+// NEW: Imports for XSS Sanitization
+import createDOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
+
+// NEW: Setup DOMPurify for Node.js
+const window = new JSDOM("").window;
+const DOMPurify = createDOMPurify(window);
 
 // GET all blogs
 export const getAllBlogs = async (req, res) => {
@@ -42,16 +49,22 @@ export const createBlog = async (req, res) => {
   try {
     console.log("\n📤 [POST] Create Blog Request Received");
     console.log("Body:", req.body);
-    console.log("File:", req.file ? `${req.file.originalname} (${req.file.size} bytes)` : "No file");
+    console.log(
+      "File:",
+      req.file ? `${req.file.originalname} (${req.file.size} bytes)` : "No file"
+    );
 
     const { title, author, publishedOn, mainContent, imageUrl } = req.body;
 
     if (!title || !author || !mainContent) {
       console.log("⚠️ Missing required fields");
       return res.status(400).json({
-        message: "Missing required fields: title, author, mainContent"
+        message: "Missing required fields: title, author, mainContent",
       });
     }
+
+    // CRITICAL SECURITY: Sanitize the main content
+    const safeContent = DOMPurify.sanitize(mainContent);
 
     console.log(`📝 Creating slug for title: "${title}"`);
     const slug = generateSlug(title);
@@ -71,7 +84,9 @@ export const createBlog = async (req, res) => {
         console.log(`✅ Image uploaded: ${finalImageUrl}`);
       } catch (uploadError) {
         console.error("❌ Image upload failed:", uploadError.message);
-        return res.status(500).json({ message: `Image upload failed: ${uploadError.message}` });
+        return res
+          .status(500)
+          .json({ message: `Image upload failed: ${uploadError.message}` });
       }
     }
 
@@ -80,16 +95,25 @@ export const createBlog = async (req, res) => {
       slug,
       author,
       publishedOn: publishedOn || new Date(),
-      mainContent,
+      mainContent: safeContent, // Use the sanitized content
       imageUrl: finalImageUrl,
     });
 
     console.log("💾 Saving blog to database...");
 
-    const savedBlog = await newBlog.save();
-    console.log(`✅ Blog saved successfully with ID: ${savedBlog._id}`);
-
-    res.status(201).json(savedBlog);
+    try {
+      const savedBlog = await newBlog.save();
+      console.log(`✅ Blog saved successfully with ID: ${savedBlog._id}`);
+      res.status(201).json(savedBlog);
+    } catch (saveError) {
+      if (saveError.code === 11000) {
+        // MongoDB duplicate key error for slug
+        return res
+          .status(400)
+          .json({ message: "A blog with this title already exists." });
+      }
+      throw saveError; // Re-throw general errors
+    }
   } catch (error) {
     console.error("❌ [CREATE] Error:", error.message);
     res.status(500).json({ message: error.message });
@@ -115,7 +139,9 @@ export const updateBlog = async (req, res) => {
         });
         updateData.imageUrl = result.url;
       } catch (uploadError) {
-        return res.status(500).json({ message: `Image upload failed: ${uploadError.message}` });
+        return res
+          .status(500)
+          .json({ message: `Image upload failed: ${uploadError.message}` });
       }
     } else if (imageUrl) {
       updateData.imageUrl = imageUrl;
@@ -125,11 +151,15 @@ export const updateBlog = async (req, res) => {
       updateData.slug = generateSlug(title);
     }
 
-    const blog = await Blog.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    // CRITICAL SECURITY: Sanitize the main content if it is being updated
+    if (updateData.mainContent) {
+      updateData.mainContent = DOMPurify.sanitize(updateData.mainContent);
+    }
+
+    const blog = await Blog.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!blog) {
       return res.status(404).json({ message: "Blog not found" });

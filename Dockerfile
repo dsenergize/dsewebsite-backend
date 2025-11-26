@@ -2,33 +2,33 @@
 # STAGE 1: Build/Install dependencies
 # --------------------------
 FROM node:22-alpine AS builder
-
-# Set working directory
 WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci
 
-# Copy the rest of the code
+# Copy the rest of the app
 COPY . .
 
 # --------------------------
 # STAGE 2: Production runtime
 # --------------------------
 FROM node:22-alpine
+WORKDIR /app
 
-# Set production environment
+# Set production environment variables
 ENV NODE_ENV=production
 ENV PORT=5000
-
-WORKDIR /app
 
 # Copy app from builder stage
 COPY --from=builder /app /app
 
-# Expose the port
+# Expose server port
 EXPOSE 5000
+
+# Optional: persist uploads
+VOLUME ["/app/Uploads"]
 
 # Start the server
 CMD ["node", "server.js"]

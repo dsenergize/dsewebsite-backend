@@ -1,28 +1,38 @@
 import express from "express";
-import { 
-  getAllBlogs, 
-  getBlogBySlug, 
-  createBlog, 
-  updateBlog, 
-  deleteBlog 
+import {
+  getAllBlogs,
+  getBlogBySlug,
+  createBlog,
+  updateBlog,
+  deleteBlog,
 } from "../Controllers/blogControllers.js";
-
-import { authenticateToken } from "../Middlewares/authMiddlewares.js";
-import { uploadImage } from "../Controllers/imageControllers.js";
-import uploadMiddleware from "../Middlewares/uploadMiddleware.js";
+import upload from "../Middlewares/uploadMiddleware.js";
+import { authenticateToken } from "../Middlewares/authMiddlewares.js"; // Import Auth Middleware
 
 const router = express.Router();
 
-// PUBLIC ROUTES
+// Public Routes (no authentication required)
 router.get("/", getAllBlogs);
-
-// PROTECTED ROUTES
-router.post("/", authenticateToken, uploadMiddleware.single("image"), createBlog);
-router.post("/upload", authenticateToken, uploadMiddleware.single("image"), uploadImage);
-router.put("/:id", authenticateToken, uploadMiddleware.single("image"), updateBlog);
-router.delete("/:id", authenticateToken, deleteBlog);
-
-// MUST BE LAST
 router.get("/:slug", getBlogBySlug);
+
+// Protected Routes (authentication and file upload required)
+// POST /api/blogs
+router.post(
+  "/",
+  authenticateToken, // 1. Check if user is authenticated
+  upload.single("imageFile"), // 2. Handle single file upload with field name 'imageFile'
+  createBlog
+);
+
+// PUT /api/blogs/:id
+router.put(
+  "/:id",
+  authenticateToken, // 1. Check if user is authenticated
+  upload.single("imageFile"), // 2. Handle single file upload
+  updateBlog
+);
+
+// DELETE /api/blogs/:id
+router.delete("/:id", authenticateToken, deleteBlog); // Auth only needed
 
 export default router;

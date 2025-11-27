@@ -30,35 +30,32 @@ connectDB();
 // Create the Express app
 const app = express();
 
-// --- DYNAMIC CORS CONFIGURATION FOR PRODUCTION ---
+// --- REMOVED DYNAMIC CORS CONFIGURATION ---
+// These variables are no longer necessary for the CORS middleware
+/*
 const allowedOrigins = [
-  "http://localhost:5173",
-"https://dsenergize.com",
+  "http://localhost:5173",
+  "https://dsenergize.com",
 ];
 
-// Add the production URL(s) from an environment variable (set during gcloud deploy)
 if (process.env.FRONTEND_URL) {
-    // process.env.FRONTEND_URL will be the deployed Cloud Run service URL
-    allowedOrigins.push(process.env.FRONTEND_URL);
-    console.log(`Production frontend URL added to CORS: ${process.env.FRONTEND_URL}`);
+    allowedOrigins.push(process.env.FRONTEND_URL);
+    console.log(`Production frontend URL added to CORS: ${process.env.FRONTEND_URL}`);
 }
+*/
 
 // Middleware
+// --- MODIFIED CORS CONFIGURATION FOR ALL ORIGINS ---
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests if origin is undefined (e.g., direct API testing, same-origin requests)
-      // or if the origin is in the allowed list.
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.error(`CORS Blocked: Origin ${origin} not in allowed list.`);
-        callback(new Error("Not allowed by CORS policy."));
-      }
-    },
-    credentials: true,
-  })
+ cors({
+ origin: "*", // The wildcard character allows all origins (e.g., all domains)
+ credentials: true,
+ })
 );
+// NOTE: Setting 'credentials: true' along with 'origin: "*"' is generally NOT supported
+// by browsers, but is included here to match the original intention.
+// For *actual* production use, you should usually remove `credentials: true` or
+// revert to a list of specific origins.
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -73,31 +70,31 @@ app.use("/api/blogs", blogRoutes);
 
 // 404 Not Found Handler
 app.use((req, res) => {
-  return res.status(404).json({ message: "Route not found" });
+ return res.status(404).json({ message: "Route not found" });
 });
 
 // Global Error Handler - MUST be the last middleware added
 app.use((err, req, res, next) => {
-  console.error("Global Error Handler:", err.stack);
-  
-  // Handle Multer errors specifically (for file uploads)
-  if (err.name === 'MulterError') {
-    let errorMessage = `File upload failed: ${err.message}`;
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      errorMessage = 'File size limit exceeded. Max size is 5MB.';
-    } else if (err.message.includes('image files')) {
-      errorMessage = 'Only JPEG, JPG, PNG, and WebP image files are allowed.';
-    }
-    return res.status(400).json({ message: errorMessage });
-  }
-  
-  // Handle general errors
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode; 
-  res.status(statusCode).json({
-    message: err.message,
-    // Hide internal stack trace in production for security
-    stack: process.env.NODE_ENV === 'production' ? 'Production Stack Trace Hidden' : err.stack,
-  });
+ console.error("Global Error Handler:", err.stack);
+ 
+ // Handle Multer errors specifically (for file uploads)
+ if (err.name === 'MulterError') {
+ let errorMessage = `File upload failed: ${err.message}`;
+ if (err.code === 'LIMIT_FILE_SIZE') {
+ errorMessage = 'File size limit exceeded. Max size is 5MB.';
+ } else if (err.message.includes('image files')) {
+ errorMessage = 'Only JPEG, JPG, PNG, and WebP image files are allowed.';
+ }
+ return res.status(400).json({ message: errorMessage });
+ }
+ 
+ // Handle general errors
+ const statusCode = res.statusCode === 200 ? 500 : res.statusCode; 
+ res.status(statusCode).json({
+ message: err.message,
+ // Hide internal stack trace in production for security
+ stack: process.env.NODE_ENV === 'production' ? 'Production Stack Trace Hidden' : err.stack,
+ });
 });
 
 // Start server

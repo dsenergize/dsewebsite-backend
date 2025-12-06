@@ -7,8 +7,9 @@ import {
   deleteBlog,
 } from "../Controllers/blogControllers.js";
 import upload from "../Middlewares/uploadMiddleware.js";
-import { authenticateToken } from "../Middlewares/authMiddlewares.js"; // Import Auth Middleware
-
+// 💡 IMPORTANT: Renamed the import to match the new, fixed function name (requireAuth)
+// In blogRoutes.js
+import { requireAuth } from "../Middlewares/authMiddlewares.js"; // This must match the export
 const router = express.Router();
 
 // Public Routes (no authentication required)
@@ -16,23 +17,30 @@ router.get("/", getAllBlogs);
 router.get("/:slug", getBlogBySlug);
 
 // Protected Routes (authentication and file upload required)
+
 // POST /api/blogs
 router.post(
   "/",
-  authenticateToken, // 1. Check if user is authenticated
-  upload.single("imageFile"), // 2. Handle single file upload with field name 'imageFile'
+  requireAuth, // Use the new function name
+  upload.single("imageFile"),
   createBlog
 );
+// ... and update all other protected routes
 
 // PUT /api/blogs/:id
 router.put(
   "/:id",
-  authenticateToken, // 1. Check if user is authenticated
-  upload.single("imageFile"), // 2. Handle single file upload
+  // ✅ FIX: Using the new networkless authentication middleware
+  requireAuth, 
+  upload.single("imageFile"),
   updateBlog
 );
 
 // DELETE /api/blogs/:id
-router.delete("/:id", authenticateToken, deleteBlog); // Auth only needed
+router.delete("/:id", 
+  // ✅ FIX: Using the new networkless authentication middleware
+  requireAuth, 
+  deleteBlog
+); 
 
 export default router;
